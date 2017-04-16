@@ -140,7 +140,9 @@ simpleheat.prototype = {
             // sort so that positive is painted over neutra is painted over negative. Unfortunately there does not seem to be 
             // a globalCompositeOperation that treats source layers equally to the layer on the canvas. 
             // Layer color painted last will be stronger
-            this._data.sort((a, b) => a[3] - b[3]);
+            this._data.sort(function (a, b) { 
+                return a[3] - b[3] 
+            });
             this._sorted = true;
         }
 
