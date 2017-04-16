@@ -11,21 +11,19 @@
         .options input { width: 200px; }
         .options label { width: 60px; float: left; text-align: right; margin-right: 10px; color: #555; }
         .ghbtns { position: relative; top: 4px; margin-left: 5px; }
+
+
     </style>
 </head>
 <body>
-<p>
-    <strong>simpleheat</strong> is a tiny and fast JS heatmap library.
-    More on <a href="https://github.com/mourner/simpleheat">mourner / simpleheat</a>
-    <iframe class="ghbtns" src="http://ghbtns.com/github-btn.html?user=mourner&amp;repo=simpleheat&amp;type=watch&amp;count=true"
-  allowtransparency="true" frameborder="0" scrolling="0" width="90" height="20"></iframe>
-</p>
+
 <div class="container">
-    <div class="options">
+    <div class="options" id="controls" >
         <label>Radius </label><input type="range" id="radius" value="25" min="10" max="50" /><br />
-        <label>Blur </label><input type="range" id="blur" value="15" min="10" max="50" />
+        <label>Blur </label><input type="range" id="blur" value="15" min="10" max="50" /><br />
+        <label>Value Weight </label><input type="range" id="valueWeight" value="0" min="-1" max="1" />
     </div>
-    <canvas id="canvas" width="1000" height="600"></canvas>
+    <canvas id="canvas" width="1000" height="600" style="background-color: grey"></canvas>
 </div>
 
 <script src="../simpleheat.js"></script>
@@ -35,12 +33,63 @@
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
                                window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
+
 function get(id) {
     return document.getElementById(id);
 }
 
-var heat = simpleheat('canvas').data(data).max(18),
+
+var heat = simpleheat('canvas').data(data).setOptions({max: 18}),
     frame;
+
+get('controls').appendChild(document.createElement('br'));
+var select = document.createElement('select');
+get('controls').appendChild(select);
+
+['soft-light',
+'source-over',
+'multiply',
+'screen',
+'overlay',
+'darken',
+'lighten',
+'color-dodge',
+'color-burn',
+'hard-light',
+'soft-light',
+'difference',
+'exclusion',
+'hue',
+'saturation',
+'color',
+'luminosity'].forEach(composite => {
+    var opt = document.createElement('option')
+    opt.value = composite
+    opt.innerText = composite
+    select.appendChild(opt)
+});
+select.value = heat.getOptions().blendMode;
+
+
+
+get('controls').appendChild(document.createElement('br'))
+var label = document.createElement('label')
+label.innerText = 'Colorize '
+get('controls').appendChild(label)
+var checkbox = document.createElement('input')
+checkbox.type = 'checkbox'
+checkbox.checked = heat.getOptions().colorize
+checkbox.addEventListener('change', e => {
+    heat.setOptions({ colorize: e.target.checked });
+    frame = frame || window.requestAnimationFrame(draw);
+});
+label.appendChild(checkbox)
+
+select.addEventListener('change', e => {
+    heat.setOptions({ blendMode: e.target.value });
+    frame = frame || window.requestAnimationFrame(draw);
+})
+
 
 function draw() {
     console.time('draw');
@@ -52,7 +101,7 @@ function draw() {
 draw();
 
 get('canvas').onmousemove = function (e) {
-    heat.add([e.layerX, e.layerY, 1]);
+    heat.add([e.layerX, e.layerY, 1, Number(get('valueWeight').value)]);
     frame = frame || window.requestAnimationFrame(draw);
 };
 
@@ -61,7 +110,10 @@ var radius = get('radius'),
     changeType = 'oninput' in radius ? 'oninput' : 'onchange';
 
 radius[changeType] = blur[changeType] = function (e) {
-    heat.radius(+radius.value, +blur.value);
+    heat.setOptions({
+        radius: +radius.value,
+        blur: +blur.value
+    })
     frame = frame || window.requestAnimationFrame(draw);
 };
 
